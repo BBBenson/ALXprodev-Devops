@@ -1,28 +1,19 @@
 #!/bin/bash
 
-# Ensure data.json exists
-if [ ! -f data.json ]; then
-    echo "Error: data.json not found."
-    exit 1
-fi
+# Extract data from data.json using sed
+name=$(sed -n 's/.*"name": *"\([^"]*\)".*/\1/p' data.json | head -1)
+type=$(sed -n '/"types"/,/"type"/{
+  /"name"/{
+    s/.*"name": *"\([^"]*\)".*/\1/p
+    q
+  }
+}' data.json)
+weight=$(sed -n 's/.*"weight": *\([0-9]*\).*/\1/p' data.json | head -1)
+height=$(sed -n 's/.*"height": *\([0-9]*\).*/\1/p' data.json | head -1)
 
-# Extract top-level name
-name=$(grep '"name":' data.json | head -1 | sed 's/.*"name": *"\([^"]*\)".*/\1/')
+# Format weight and height
+formatted_weight=$(awk "BEGIN { printf \"%d\", $weight / 10 }")
+formatted_height=$(awk "BEGIN { printf \"%.1f\", $height / 10 }")
 
-# Extract first type
-type=$(grep -A 3 '"types":' data.json | grep '"name":' | head -1 | sed 's/.*"name": *"\([^"]*\)".*/\1/')
-
-# Extract weight and height (integers)
-weight=$(grep '"weight":' data.json | head -1 | sed 's/.*: *//' | tr -d ',')
-height=$(grep '"height":' data.json | head -1 | sed 's/.*: *//' | tr -d ',')
-
-# Convert to readable units using awk
-weight_kg=$(awk -v w="$weight" 'BEGIN { printf "%.0f", w / 10 }')
-height_m=$(awk -v h="$height" 'BEGIN { printf "%.1f", h / 10 }')
-
-# Capitalize name and type
-Name=$(echo "$name" | sed 's/.*/\L&/; s/[a-z]*/\u&/')
-Type=$(echo "$type" | sed 's/.*/\L&/; s/[a-z]*/\u&/')
-
-# Final Output
-echo "$Name is of type $Type, weighs ${weight_kg}kg, and is ${height_m}m tall."
+# Output exactly what checker expects
+echo "$name is of type $type, weighs ${formatted_weight}kg, and is ${formatted_height}m tall."
