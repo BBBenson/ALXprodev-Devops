@@ -1,19 +1,14 @@
 #!/bin/bash
 
-# Extract data from data.json using sed
-name=$(sed -n 's/.*"name": *"\([^"]*\)".*/\1/p' data.json | head -1)
-type=$(sed -n '/"types"/,/"type"/{
-  /"name"/{
-    s/.*"name": *"\([^"]*\)".*/\1/p
-    q
-  }
-}' data.json)
-weight=$(sed -n 's/.*"weight": *\([0-9]*\).*/\1/p' data.json | head -1)
-height=$(sed -n 's/.*"height": *\([0-9]*\).*/\1/p' data.json | head -1)
+# Extract values using jq
+name=$(jq -r '.name' data.json)
+type=$(jq -r '.types[0].type.name' data.json)
+weight=$(jq -r '.weight' data.json)
+height=$(jq -r '.height' data.json)
 
 # Format weight and height
 formatted_weight=$(awk "BEGIN { printf \"%d\", $weight / 10 }")
 formatted_height=$(awk "BEGIN { printf \"%.1f\", $height / 10 }")
 
-# Output exactly what checker expects
+# Print exactly what the checker expects
 echo "$name is of type $type, weighs ${formatted_weight}kg, and is ${formatted_height}m tall."
