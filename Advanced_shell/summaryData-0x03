@@ -1,0 +1,37 @@
+#!/bin/bash
+
+# Ensure jq is installed
+if ! command -v jq >/dev/null; then
+  echo "Error: jq is not installed." >&2
+  exit 1
+fi
+
+# Output CSV file
+report_file="pokemon_report.csv"
+
+# CSV Header
+echo "Name,Height (m),Weight (kg)" > "$report_file"
+
+# Process each JSON file
+for json_file in pokemon_data/*.json; do
+  name=$(jq -r '.name | ascii_upcase[0] + .[1:]' "$json_file")
+  height=$(jq -r '.height' "$json_file")
+  weight=$(jq -r '.weight' "$json_file")
+
+  # Convert decimeters to meters, hectograms to kilograms
+  height_m=$(echo "scale=2; $height / 10" | bc)
+  weight_kg=$(echo "scale=2; $weight / 10" | bc)
+
+  echo "$name,$height_m,$weight_kg" >> "$report_file"
+done
+
+echo -e "\nCSV Report generated at: $report_file"
+
+# Display content of CSV
+cat "$report_file"
+
+# Calculate averages using awk (skip header)
+awk -F',' 'NR>1 { h += $2; w += $3; count++ } END {
+  printf "\nAverage Height: %.2f m\n", h/count
+  printf "Average Weight: %.2f kg\n", w/count
+}' "$report_file"
