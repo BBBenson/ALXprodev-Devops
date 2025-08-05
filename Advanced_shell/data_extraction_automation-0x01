@@ -1,0 +1,24 @@
+#!/bin/bash
+
+# Ensure data.json exists
+if [ ! -f data.json ]; then
+    echo "Error: data.json not found."
+    exit 1
+fi
+
+# Extract values using grep, sed, and awk
+name=$(grep -o '"name": *"[^"]*"' data.json | head -1 | sed 's/.*"name": *"\([^"]*\)".*/\1/')
+type=$(grep -o '"type": *{[^}]*}' data.json | head -1 | grep -o '"name": *"[^"]*"' | sed 's/.*"name": *"\([^"]*\)".*/\1/')
+weight=$(grep -o '"weight": *[0-9]*' data.json | sed 's/.*: *//' | head -1)
+height=$(grep -o '"height": *[0-9]*' data.json | sed 's/.*: *//' | head -1)
+
+# Convert weight and height from decimeters/hectograms to meters/kg
+weight_kg=$(awk "BEGIN { printf \"%.1f\", $weight / 10 }")
+height_m=$(awk "BEGIN { printf \"%.1f\", $height / 10 }")
+
+# Capitalize name and type
+Name=$(echo "$name" | sed 's/.*/\L&/; s/[a-z]*/\u&/')
+Type=$(echo "$type" | sed 's/.*/\L&/; s/[a-z]*/\u&/')
+
+# Final output
+echo "$Name is of type $Type, weighs ${weight_kg}kg, and is ${height_m}m tall."
